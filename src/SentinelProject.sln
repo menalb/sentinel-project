@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35208.52
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelProject.Tests", "SentinelProject.Tests\SentinelProject.Tests.csproj", "{1474996D-B2B2-4273-AB65-CD762D01CE0C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SentinelProject.API", "SentinelProject.API\SentinelProject.API.csproj", "{BF332DFF-DA59-4CEA-806B-00C13601CC5D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1474996D-B2B2-4273-AB65-CD762D01CE0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1474996D-B2B2-4273-AB65-CD762D01CE0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1474996D-B2B2-4273-AB65-CD762D01CE0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1474996D-B2B2-4273-AB65-CD762D01CE0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF332DFF-DA59-4CEA-806B-00C13601CC5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF332DFF-DA59-4CEA-806B-00C13601CC5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF332DFF-DA59-4CEA-806B-00C13601CC5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF332DFF-DA59-4CEA-806B-00C13601CC5D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {030B4005-2F76-4C29-82EF-3E309AD8C76B}
+	EndGlobalSection
+EndGlobal
