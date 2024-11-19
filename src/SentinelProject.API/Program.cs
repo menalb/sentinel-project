@@ -1,4 +1,7 @@
 using FastEndpoints;
+using FastEndpoints.Swagger;
+using Microsoft.AspNetCore.Authentication;
+using NSwag;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,12 +10,37 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddFastEndpoints();
+
+builder.Services
+    .AddFastEndpoints()
+    .AddAuthorization()
+    .AddAuthentication(ApiKeyAuth.SchemeName)
+    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuth>(ApiKeyAuth.SchemeName, null);
+
+builder.Services.SwaggerDocument(o =>
+{
+    o.EnableJWTBearerAuth = false;
+    o.DocumentSettings = s =>
+    {
+        s.AddAuth(ApiKeyAuth.SchemeName, new()
+        {
+            Name = ApiKeyAuth.HeaderName,
+            In = OpenApiSecurityApiKeyLocation.Header,
+            Type = OpenApiSecuritySchemeType.ApiKey,
+        });
+    };
+});
+
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseAuthentication()
+    .UseAuthorization()
+    .UseFastEndpoints()
+    .UseSwaggerGen();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -20,8 +48,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
 
 app.MapControllers();
 

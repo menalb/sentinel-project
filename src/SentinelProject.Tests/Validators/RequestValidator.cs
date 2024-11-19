@@ -1,10 +1,10 @@
-﻿using SentinelProject.API.Features;
+﻿using SentinelProject.API.Features.ProcessTransaction;
 
 namespace SentinelProject.Tests.Validators;
 
 public class AnalyzeTransactionValidatorTests
 {
-    private readonly AnalyzeTransactionValidator validator = new();
+    private readonly ProcessTransactionValidator validator = new();
 
     [Theory(DisplayName = "Invalid Transaction Amount")]
     [InlineData(0)]
@@ -12,7 +12,7 @@ public class AnalyzeTransactionValidatorTests
     public void InvalidTransactionAmount(decimal amount)
     {
         // Arrange
-        var request = new AnalyzeTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), amount, "Rome", "Merchant1", "Desktop", "Online");
+        var request = new ProcessTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), amount, "Rome", "Merchant1", "Desktop", "Online");
 
         // Act
         var result = validator.Validate(request);
@@ -26,7 +26,7 @@ public class AnalyzeTransactionValidatorTests
     public void ValidTransaction()
     {
         // Arrange
-        var request = new AnalyzeTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 15, "Rome", "Merchant1", "Desktop", "Online");
+        var request = new ProcessTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 15, "Rome", "Merchant1", "Desktop", "Online");
 
         // Act
         var result = validator.Validate(request);
