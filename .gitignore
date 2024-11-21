@@ -1,0 +1,6 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/src/SentinelProject.API/Properties/launchSettings.json
+/src/SentinelProject.API/appsettings.Development.json
