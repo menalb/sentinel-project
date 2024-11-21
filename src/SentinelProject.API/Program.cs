@@ -1,5 +1,6 @@
 using FastEndpoints;
 using FastEndpoints.Swagger;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication;
 using NSwag;
 
@@ -32,6 +33,14 @@ builder.Services.SwaggerDocument(o =>
 });
 
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.ConfigureEndpoints(context);
+    });
+});
 
 var app = builder.Build();
 
