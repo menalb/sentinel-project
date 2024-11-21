@@ -1,17 +1,24 @@
 ﻿using NSubstitute;
 using SentinelProject.Messages;
+using System.Transactions;
 
 namespace SentinelProject.Tests.ProcessTransaction;
 
 public class TransactionProcessTests
 {
     private readonly ICountriesStore _countriesStore;
+    private readonly ICustomerSettingsStore _customerSettingsStore;
 
     private readonly TransactionProcessor _processor;
     public TransactionProcessTests()
     {
         _countriesStore = Substitute.For<ICountriesStore>();
-        _processor = new TransactionProcessor(_countriesStore);
+        _customerSettingsStore = Substitute.For<ICustomerSettingsStore>();
+
+        _processor = new TransactionProcessor(_customerSettingsStore, _countriesStore);
+
+        _countriesStore.GetCountry(Arg.Any<string>()).Returns(new Country("TrustedLocation", 1));
+        _customerSettingsStore.GetById(Arg.Any<Guid>()).Returns(new Customer(Guid.NewGuid(), "Joe Doe", 150));
     }
 
     [Theory(DisplayName = "When it is from an hostile country (trust rate < 0.3) It is rejected")]
@@ -98,6 +105,33 @@ public class TransactionProcessTests
         //Assert
         Assert.Equal(ProcessTransactionResults.Accepted, result.Result);
     }
+
+    [Theory(DisplayName = "When the amount is too large for the customer's max transaction amount settings, it is rejected")]
+    [InlineData(10, 100)]
+    [InlineData(15000, 100000)]
+    public void When_Amount_Is_Too_Big_For_Customer_It_is_Rejected(decimal customerMaxTransactionAmount, decimal amount)
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var transaction = new CreatedTransactionProcessRequest(
+            Guid.NewGuid(),
+            customerId,
+            amount,
+            "TrustedCountry",
+            "Zalando",
+            "Mobile",
+            "purchase"
+            );
+
+        _customerSettingsStore.GetById(customerId).Returns(new Customer(customerId, "Joe Doe", customerMaxTransactionAmount));
+
+        // Act
+        var result = _processor.Process(transaction);
+
+        //Assert
+        Assert.Equal(ProcessTransactionResults.Rejected, result.Result);
+        Assert.Equal("Transaction too big", result.Message);
+    }
 }
 
 public interface ICountriesStore
@@ -106,12 +140,31 @@ public interface ICountriesStore
 }
 public record Country(string Name, float TrustRate);
 
-public class TransactionProcessor(ICountriesStore countryStore)
+public interface ICustomerSettingsStore
+{
+    Customer GetById(Guid Id);
+}
+public record Customer(Guid Id, string Name, decimal MaxTransactionAmount);
+public class TransactionProcessor(
+    ICustomerSettingsStore customerSettingsStore,
+    ICountriesStore countryStore
+    )
 {
     public ProcessTransactionResponse Process(CreatedTransactionProcessRequest transaction)
     {
-        var result = countryStore.GetCountry(transaction.Location);
-        if (result.TrustRate <= 0.3f)
+        var customerSettings = customerSettingsStore.GetById(transaction.UserId);
+
+        if( transaction.Amount > customerSettings.MaxTransactionAmount)
+        {
+            return new ProcessTransactionResponse(
+                transaction.TransactionId,
+                ProcessTransactionResults.Rejected,
+                "Transaction too big"
+                );
+        }        
+
+        var country = countryStore.GetCountry(transaction.Location);
+        if (country.TrustRate <= 0.3f)
         {
             return new ProcessTransactionResponse(
                 transaction.TransactionId,
@@ -120,7 +173,7 @@ public class TransactionProcessor(ICountriesStore countryStore)
                 );
         }
 
-        if (result.TrustRate > 0.3f && result.TrustRate <= 0.5)
+        if (country.TrustRate > 0.3f && country.TrustRate <= 0.5)
         {
             return new ProcessTransactionResponse(
                 transaction.TransactionId,
@@ -128,7 +181,7 @@ public class TransactionProcessor(ICountriesStore countryStore)
                 "Medium trust country"
                 );
         }
-
+       
         return new ProcessTransactionResponse(transaction.TransactionId, ProcessTransactionResults.Accepted);
     }
 }
