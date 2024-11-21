@@ -1,6 +1,6 @@
 ﻿using NSubstitute;
+using NSubstitute.ReturnsExtensions;
 using SentinelProject.Messages;
-using System.Transactions;
 
 namespace SentinelProject.Tests.ProcessTransaction;
 
@@ -106,6 +106,31 @@ public class TransactionProcessTests
         Assert.Equal(ProcessTransactionResults.Accepted, result.Result);
     }
 
+    [Fact(DisplayName = "When the the customer is not in the store, it is rejected")]
+    public void When_Customer_DoesNot_Exist_It_Is_Rejected()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var transaction = new CreatedTransactionProcessRequest(
+            Guid.NewGuid(),
+            customerId,
+            100,
+            "TrustedCountry",
+            "Zalando",
+            "Mobile",
+            "purchase"
+            );
+
+        _customerSettingsStore.GetById(customerId).ReturnsNull();
+
+        // Act
+        var result = _processor.Process(transaction);
+
+        //Assert
+        Assert.Equal(ProcessTransactionResults.Rejected, result.Result);
+        Assert.Equal("Customer not found", result.Message);
+    }
+
     [Theory(DisplayName = "When the amount is too large for the customer's max transaction amount settings, it is rejected")]
     [InlineData(10, 100)]
     [InlineData(15000, 100000)]
@@ -142,7 +167,7 @@ public record Country(string Name, float TrustRate);
 
 public interface ICustomerSettingsStore
 {
-    Customer GetById(Guid Id);
+    Customer? GetById(Guid Id);  // TODO: Use Option instead of null
 }
 public record Customer(Guid Id, string Name, decimal MaxTransactionAmount);
 public class TransactionProcessor(
@@ -154,14 +179,23 @@ public class TransactionProcessor(
     {
         var customerSettings = customerSettingsStore.GetById(transaction.UserId);
 
-        if( transaction.Amount > customerSettings.MaxTransactionAmount)
+        if( customerSettings == null)
+        {
+            return new ProcessTransactionResponse(
+                transaction.TransactionId,
+                ProcessTransactionResults.Rejected,
+                "Customer not found"
+                );
+        }
+
+        if (transaction.Amount > customerSettings.MaxTransactionAmount)
         {
             return new ProcessTransactionResponse(
                 transaction.TransactionId,
                 ProcessTransactionResults.Rejected,
                 "Transaction too big"
                 );
-        }        
+        }
 
         var country = countryStore.GetCountry(transaction.Location);
         if (country.TrustRate <= 0.3f)
@@ -181,7 +215,7 @@ public class TransactionProcessor(
                 "Medium trust country"
                 );
         }
-       
+
         return new ProcessTransactionResponse(transaction.TransactionId, ProcessTransactionResults.Accepted);
     }
 }
