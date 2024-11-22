@@ -1,4 +1,5 @@
 ﻿using NSubstitute;
+using NSubstitute.ClearExtensions;
 using NSubstitute.ReturnsExtensions;
 using SentinelProject.Messages;
 
@@ -8,14 +9,20 @@ public class TransactionProcessTests
 {
     private readonly ICountriesStore _countriesStore;
     private readonly ICustomerSettingsStore _customerSettingsStore;
+    private readonly ITransactionsStore _transactionsStore;
 
     private readonly TransactionProcessor _processor;
     public TransactionProcessTests()
     {
         _countriesStore = Substitute.For<ICountriesStore>();
         _customerSettingsStore = Substitute.For<ICustomerSettingsStore>();
+        _transactionsStore = Substitute.For<ITransactionsStore>();
 
-        _processor = new TransactionProcessor(_customerSettingsStore, _countriesStore);
+        _processor = new TransactionProcessor(
+            _customerSettingsStore,
+            _countriesStore,
+            _transactionsStore
+            );
 
         _countriesStore.GetCountry(Arg.Any<string>()).Returns(new Country("TrustedLocation", 1));
         _customerSettingsStore.GetById(Arg.Any<Guid>()).Returns(new Customer(Guid.NewGuid(), "Joe Doe", 150));
@@ -37,7 +44,8 @@ public class TransactionProcessTests
             hostileCountry,
             "Zalando",
             "Mobile",
-            "purchase"
+            "purchase",
+            DateTime.UtcNow
             );
 
         _countriesStore.GetCountry(transaction.Location).Returns(new Country(hostileCountry, trustRate));
@@ -65,7 +73,8 @@ public class TransactionProcessTests
             warningCountry,
             "Zalando",
             "Mobile",
-            "purchase"
+            "purchase",
+            DateTime.UtcNow
             );
 
         _countriesStore.GetCountry(transaction.Location).Returns(new Country(warningCountry, trustRate));
@@ -94,7 +103,8 @@ public class TransactionProcessTests
             trustedCountry,
             "Zalando",
             "Mobile",
-            "purchase"
+            "purchase",
+            DateTime.UtcNow
             );
 
         _countriesStore.GetCountry(transaction.Location).Returns(new Country(trustedCountry, trustRate));
@@ -118,7 +128,8 @@ public class TransactionProcessTests
             "TrustedCountry",
             "Zalando",
             "Mobile",
-            "purchase"
+            "purchase",
+            DateTime.UtcNow
             );
 
         _customerSettingsStore.GetById(customerId).ReturnsNull();
@@ -145,7 +156,8 @@ public class TransactionProcessTests
             "TrustedCountry",
             "Zalando",
             "Mobile",
-            "purchase"
+            "purchase",
+            DateTime.UtcNow
             );
 
         _customerSettingsStore.GetById(customerId).Returns(new Customer(customerId, "Joe Doe", customerMaxTransactionAmount));
@@ -157,8 +169,81 @@ public class TransactionProcessTests
         Assert.Equal(ProcessTransactionResults.Rejected, result.Result);
         Assert.Equal("Transaction too big", result.Message);
     }
+
+    [Fact(DisplayName = "When there are many (5) small (amount <= 5) subsequent transactions each within 1 minute of the other, It is accepted with warning")]
+    public void When_More_Subsequent_Small_Transactions_It_Is_Accepter_With_Warnings()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        var transaction = new CreatedTransactionProcessRequest(
+            Guid.NewGuid(),
+            customerId,
+            1,
+            "TrustedCountry",
+            "Zalando",
+            "Mobile",
+            "purchase",
+            DateTime.UtcNow
+            );
+
+        _transactionsStore.GetLatestTransactionsForCustomer(customerId, 5).Returns(
+        [
+            new(Guid.NewGuid(),customerId, 1, now.AddMinutes(-1)),
+            new(Guid.NewGuid(),customerId, 2, now.AddMinutes(-2)),
+            new(Guid.NewGuid(),customerId, 3, now.AddMinutes(-3)),
+            new(Guid.NewGuid(),customerId, 4, now.AddMinutes(-3.5)),
+            new(Guid.NewGuid(),customerId, 4.5M, now.AddMinutes(-5))
+        ]);
+
+        // Act
+        var result = _processor.Process(transaction);
+
+        //Assert
+        Assert.Equal(ProcessTransactionResults.Warning, result.Result);
+        Assert.Equal("Many small subsequent transactions", result.Message);
+    }
+
+    [Fact(DisplayName = "When there are many (5) not small (at least one > 5) subsequent transactions each within 1 minute of the other, It is accepted")]
+    public void When_More_Subsequent_Not_SmallTransactions_It_Is_Accepter_With_Warnings()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        var transaction = new CreatedTransactionProcessRequest(
+            Guid.NewGuid(),
+            customerId,
+            1,
+            "TrustedCountry",
+            "Zalando",
+            "Mobile",
+            "purchase",
+            DateTime.UtcNow
+            );
+
+        _transactionsStore.GetLatestTransactionsForCustomer(customerId, 5).Returns(
+        [
+            new(Guid.NewGuid(),customerId, 1, now.AddMinutes(-1)),
+            new(Guid.NewGuid(),customerId, 2, now.AddMinutes(-2)),
+            new(Guid.NewGuid(),customerId, 3, now.AddMinutes(-3)),
+            new(Guid.NewGuid(),customerId, 6, now.AddMinutes(-3.5)),
+            new(Guid.NewGuid(),customerId, 4.5M, now.AddMinutes(-5))
+        ]);
+
+        // Act
+        var result = _processor.Process(transaction);
+
+        //Assert
+        Assert.Equal(ProcessTransactionResults.Accepted, result.Result);
+    }
 }
 
+public interface ITransactionsStore
+{
+    IReadOnlyList<LatestTransaction> GetLatestTransactionsForCustomer(Guid customerId, int howMany);
+}
+
+public record LatestTransaction(Guid TransactionId, Guid CustomerId, decimal Amount, DateTime IssuedAt);
 public interface ICountriesStore
 {
     Country GetCountry(string name);
@@ -172,14 +257,15 @@ public interface ICustomerSettingsStore
 public record Customer(Guid Id, string Name, decimal MaxTransactionAmount);
 public class TransactionProcessor(
     ICustomerSettingsStore customerSettingsStore,
-    ICountriesStore countryStore
+    ICountriesStore countryStore,
+    ITransactionsStore transactionsStore
     )
 {
     public ProcessTransactionResponse Process(CreatedTransactionProcessRequest transaction)
     {
         var customerSettings = customerSettingsStore.GetById(transaction.UserId);
 
-        if( customerSettings == null)
+        if (customerSettings == null)
         {
             return new ProcessTransactionResponse(
                 transaction.TransactionId,
@@ -214,6 +300,21 @@ public class TransactionProcessor(
                 ProcessTransactionResults.Warning,
                 "Medium trust country"
                 );
+        }
+
+        var latestTransactions = transactionsStore.GetLatestTransactionsForCustomer(transaction.UserId, 5);
+
+        if (latestTransactions.Count == 5)
+        {
+            var time = latestTransactions[0].IssuedAt.Subtract(latestTransactions[latestTransactions.Count - 1].IssuedAt);
+            if (time.Minutes < 5 && latestTransactions.All(t=>t.Amount <= 5))
+            {
+                return new ProcessTransactionResponse(
+                  transaction.TransactionId,
+                  ProcessTransactionResults.Warning,
+                  "Many small subsequent transactions"
+                  );
+            }
         }
 
         return new ProcessTransactionResponse(transaction.TransactionId, ProcessTransactionResults.Accepted);

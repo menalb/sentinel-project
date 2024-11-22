@@ -12,7 +12,7 @@ public class AnalyzeTransactionValidatorTests
     public void InvalidTransactionAmount(decimal amount)
     {
         // Arrange
-        var request = new ProcessTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), amount, "Rome", "Merchant1", "Desktop", "Online");
+        var request = new ProcessTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), amount, "Rome", "Merchant1", "Desktop", "Online", DateTime.UtcNow);
 
         // Act
         var result = validator.Validate(request);
@@ -26,7 +26,7 @@ public class AnalyzeTransactionValidatorTests
     public void ValidTransaction()
     {
         // Arrange
-        var request = new ProcessTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 15, "Rome", "Merchant1", "Desktop", "Online");
+        var request = new ProcessTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 15, "Rome", "Merchant1", "Desktop", "Online", DateTime.UtcNow);
 
         // Act
         var result = validator.Validate(request);
