@@ -48,7 +48,7 @@ public class TransactionProcessTests
             DateTime.UtcNow
             );
 
-        _countriesStore.GetCountry(transaction.Location).Returns(new Country(hostileCountry, trustRate));
+        _countriesStore.GetCountry(transaction.Country).Returns(new Country(hostileCountry, trustRate));
 
         // Act
         var result = _processor.Process(transaction);
@@ -77,7 +77,7 @@ public class TransactionProcessTests
             DateTime.UtcNow
             );
 
-        _countriesStore.GetCountry(transaction.Location).Returns(new Country(warningCountry, trustRate));
+        _countriesStore.GetCountry(transaction.Country).Returns(new Country(warningCountry, trustRate));
 
         // Act
         var result = _processor.Process(transaction);
@@ -107,7 +107,7 @@ public class TransactionProcessTests
             DateTime.UtcNow
             );
 
-        _countriesStore.GetCountry(transaction.Location).Returns(new Country(trustedCountry, trustRate));
+        _countriesStore.GetCountry(transaction.Country).Returns(new Country(trustedCountry, trustRate));
 
         // Act
         var result = _processor.Process(transaction);
@@ -143,7 +143,7 @@ public class TransactionProcessTests
     }
 
     [Theory(DisplayName = "When the amount is too large for the customer's max transaction amount settings, it is rejected")]
-    [InlineData(10, 100)]
+    [InlineData(20, 100)]
     [InlineData(15000, 100000)]
     public void When_Amount_Is_Too_Big_For_Customer_It_is_Rejected(decimal customerMaxTransactionAmount, decimal amount)
     {
@@ -170,7 +170,7 @@ public class TransactionProcessTests
         Assert.Equal("Transaction too big", result.Message);
     }
 
-    [Fact(DisplayName = "When there are many (5) small (amount <= 5) subsequent transactions each within 1 minute of the other, It is accepted with warning")]
+    [Fact(DisplayName = "When there are many (10) small (amount <= 5) subsequent transactions each within 1 minute of the other, It is accepted with warning")]
     public void When_More_Subsequent_Small_Transactions_It_Is_Accepter_With_Warnings()
     {
         // Arrange
@@ -184,16 +184,20 @@ public class TransactionProcessTests
             "Zalando",
             "Mobile",
             "purchase",
-            DateTime.UtcNow
+            now
             );
 
-        _transactionsStore.GetLatestTransactionsForCustomer(customerId, 5).Returns(
+        _transactionsStore.GetLatestTransactionsForCustomer(customerId, 9).Returns(
         [
             new(Guid.NewGuid(),customerId, 1, now.AddMinutes(-1)),
             new(Guid.NewGuid(),customerId, 2, now.AddMinutes(-2)),
             new(Guid.NewGuid(),customerId, 3, now.AddMinutes(-3)),
             new(Guid.NewGuid(),customerId, 4, now.AddMinutes(-3.5)),
-            new(Guid.NewGuid(),customerId, 4.5M, now.AddMinutes(-5))
+            new(Guid.NewGuid(),customerId, 4.5M, now.AddMinutes(-4)),
+            new(Guid.NewGuid(),customerId, 4.5M, now.AddMinutes(-5)),
+            new(Guid.NewGuid(),customerId, 4.5M, now.AddMinutes(-6)),
+            new(Guid.NewGuid(),customerId, 4.5M, now.AddMinutes(-7)),
+            new(Guid.NewGuid(),customerId, 4.5M, now.AddMinutes(-8))
         ]);
 
         // Act
@@ -204,7 +208,7 @@ public class TransactionProcessTests
         Assert.Equal("Many small subsequent transactions", result.Message);
     }
 
-    [Fact(DisplayName = "When there are many (5) not small (at least one > 5) subsequent transactions each within 1 minute of the other, It is accepted")]
+    [Fact(DisplayName = "When there are many (10) not small (at least one > 5) subsequent transactions each within 1 minute of the other, It is accepted")]
     public void When_More_Subsequent_Not_SmallTransactions_It_Is_Accepter_With_Warnings()
     {
         // Arrange
@@ -218,16 +222,20 @@ public class TransactionProcessTests
             "Zalando",
             "Mobile",
             "purchase",
-            DateTime.UtcNow
+            now
             );
 
-        _transactionsStore.GetLatestTransactionsForCustomer(customerId, 5).Returns(
+        _transactionsStore.GetLatestTransactionsForCustomer(customerId, 9).Returns(
         [
-            new(Guid.NewGuid(),customerId, 1, now.AddMinutes(-1)),
+            new(Guid.NewGuid(),customerId, 2, now.AddMinutes(-1)),
             new(Guid.NewGuid(),customerId, 2, now.AddMinutes(-2)),
             new(Guid.NewGuid(),customerId, 3, now.AddMinutes(-3)),
             new(Guid.NewGuid(),customerId, 6, now.AddMinutes(-3.5)),
-            new(Guid.NewGuid(),customerId, 4.5M, now.AddMinutes(-5))
+            new(Guid.NewGuid(),customerId, 4.5M, now.AddMinutes(-4)),
+            new(Guid.NewGuid(),customerId, 2, now.AddMinutes(-5)),
+            new(Guid.NewGuid(),customerId, 2, now.AddMinutes(-6)),
+            new(Guid.NewGuid(),customerId, 2, now.AddMinutes(-7)),
+            new(Guid.NewGuid(),customerId, 2, now.AddMinutes(-8)),
         ]);
 
         // Act
@@ -236,11 +244,57 @@ public class TransactionProcessTests
         //Assert
         Assert.Equal(ProcessTransactionResults.Accepted, result.Result);
     }
+
+    [Fact(DisplayName = "Accepted transactions are stored")]
+    public void Accepted_Transactions_Are_Stored()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var transaction = new CreatedTransactionProcessRequest(
+            Guid.NewGuid(),
+            customerId,
+            1,
+            "TrustedCountry",
+            "Zalando",
+            "Mobile",
+            "purchase",
+            DateTime.UtcNow
+            );
+        // Act
+        var result = _processor.Process(transaction);
+
+        //Assert
+        Assert.Equal(ProcessTransactionResults.Accepted, result.Result);
+        _transactionsStore
+            .Received()
+            .Store(
+            new CustomerTransaction(
+                transaction.TransactionId,
+                transaction.UserId,
+                transaction.Amount,
+                transaction.Country,
+                transaction.Merchant,
+                transaction.Device,
+                transaction.TransactionType,
+                transaction.IssuesAt
+                )
+            );
+    }
 }
 
+public record CustomerTransaction(Guid TransactionId,
+    Guid UserId,
+    decimal Amount,
+    string Country,
+    string Merchant,
+    string Device,
+    string TransactionType,
+    DateTime IssuesAt
+    );
 public interface ITransactionsStore
 {
     IReadOnlyList<LatestTransaction> GetLatestTransactionsForCustomer(Guid customerId, int howMany);
+    void Store(CustomerTransaction transaction);
 }
 
 public record LatestTransaction(Guid TransactionId, Guid CustomerId, decimal Amount, DateTime IssuedAt);
@@ -283,7 +337,7 @@ public class TransactionProcessor(
                 );
         }
 
-        var country = countryStore.GetCountry(transaction.Location);
+        var country = countryStore.GetCountry(transaction.Country);
         if (country.TrustRate <= 0.3f)
         {
             return new ProcessTransactionResponse(
@@ -302,21 +356,34 @@ public class TransactionProcessor(
                 );
         }
 
-        var latestTransactions = transactionsStore.GetLatestTransactionsForCustomer(transaction.UserId, 5);
-
-        if (latestTransactions.Count == 5)
+        if (transaction.Amount < 5)
         {
-            var time = latestTransactions[0].IssuedAt.Subtract(latestTransactions[latestTransactions.Count - 1].IssuedAt);
-            if (time.Minutes < 5 && latestTransactions.All(t=>t.Amount <= 5))
+            var latestTransactions = transactionsStore.GetLatestTransactionsForCustomer(transaction.UserId, 9);
+
+            if (latestTransactions.Count == 9)
             {
-                return new ProcessTransactionResponse(
-                  transaction.TransactionId,
-                  ProcessTransactionResults.Warning,
-                  "Many small subsequent transactions"
-                  );
+                var time = transaction.IssuesAt.Subtract(latestTransactions[latestTransactions.Count - 1].IssuedAt);
+                if (time.Minutes < 10 && latestTransactions.All(t => t.Amount <= 5))
+                {
+                    return new ProcessTransactionResponse(
+                      transaction.TransactionId,
+                      ProcessTransactionResults.Warning,
+                      "Many small subsequent transactions"
+                      );
+                }
             }
         }
 
+        transactionsStore.Store(new(
+             transaction.TransactionId,
+                transaction.UserId,
+                transaction.Amount,
+                transaction.Country,
+                transaction.Merchant,
+                transaction.Device,
+                transaction.TransactionType,
+                transaction.IssuesAt
+            ));
         return new ProcessTransactionResponse(transaction.TransactionId, ProcessTransactionResults.Accepted);
     }
 }

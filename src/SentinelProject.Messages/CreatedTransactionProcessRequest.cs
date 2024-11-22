@@ -3,7 +3,7 @@ public record CreatedTransactionProcessRequest(
     Guid TransactionId,
     Guid UserId,
     decimal Amount,
-    string Location,
+    string Country,
     string Merchant,
     string Device,
     string TransactionType,
