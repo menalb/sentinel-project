@@ -2,11 +2,16 @@
 using System.Linq;
 
 namespace SentinelProject.Consumer.Core;
+
+public interface ITransactionProcessor
+{
+    ProcessTransactionResponse Process(CreatedTransactionProcessRequest transaction);
+}
 public class TransactionProcessor(
     ICustomerSettingsStore customerSettingsStore,
     ICountriesStore countryStore,
     ITransactionsStore transactionsStore
-    )
+    ) : ITransactionProcessor
 {
     public ProcessTransactionResponse Process(CreatedTransactionProcessRequest transaction)
     {
