@@ -1,11 +1,12 @@
 ﻿using SentinelProject.Messages;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SentinelProject.Consumer.Core;
 
 public interface ITransactionProcessor
 {
-    ProcessTransactionResponse Process(CreatedTransactionProcessRequest transaction);
+    Task<ProcessTransactionResponse> Process(CreatedTransactionProcessRequest transaction);
 }
 public class TransactionProcessor(
     ICustomerSettingsStore customerSettingsStore,
@@ -13,7 +14,7 @@ public class TransactionProcessor(
     ITransactionsStore transactionsStore
     ) : ITransactionProcessor
 {
-    public ProcessTransactionResponse Process(CreatedTransactionProcessRequest transaction)
+    public async Task<ProcessTransactionResponse> Process(CreatedTransactionProcessRequest transaction)
     {
         var customerSettings = customerSettingsStore.GetById(transaction.UserId);
 
@@ -52,7 +53,7 @@ public class TransactionProcessor(
 
         if (transaction.Amount < 5)
         {
-            var latestTransactions = transactionsStore.GetLatestTransactionsForCustomer(transaction.UserId, 9);
+            var latestTransactions = await transactionsStore.GetLatestTransactionsForCustomer(transaction.UserId, 9);
 
             if (latestTransactions.Count == 9)
             {
@@ -67,16 +68,17 @@ public class TransactionProcessor(
             }
         }
 
-        transactionsStore.Store(new(
-             transaction.TransactionId,
-                transaction.UserId,
-                transaction.Amount,
-                transaction.Country,
-                transaction.Merchant,
-                transaction.Device,
-                transaction.TransactionType,
-                transaction.IssuesAt
+        await transactionsStore.Store(new(
+            transaction.TransactionId,
+            transaction.UserId,
+            transaction.Amount,
+            transaction.Country,
+            transaction.Merchant,
+            transaction.Device,
+            transaction.TransactionType,
+            transaction.IssuesAt
             ));
+
         return new AcceptedProcessTransactionResponse(transaction.TransactionId);
     }
 }

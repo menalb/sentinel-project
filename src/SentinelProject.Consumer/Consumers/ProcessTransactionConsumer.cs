@@ -13,7 +13,7 @@ public class ProcessTransactionConsumer(ITransactionProcessor transactionProcess
         var message = context.Message;
         logger.LogInformation("Request with transaction Id {TransactionId} consumed, I got it", context.Message.TransactionId);
 
-        var processResult = transactionProcessor.Process(message);
+        var processResult = await transactionProcessor.Process(message);
 
         var response = processResult switch
         {

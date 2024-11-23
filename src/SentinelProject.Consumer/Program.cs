@@ -7,6 +7,11 @@ using SentinelProject.Consumer.Core;
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using MongoDB.Driver;
+using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
+using SentinelProject.Consumer.Infrastructure;
 
 namespace SentinelProject.Consumer;
 
@@ -19,14 +24,20 @@ public class Program
 
     public static IHostBuilder CreateHostBuilder(string[] args) =>
         Host.CreateDefaultBuilder(args)
-            .ConfigureServices((hostContext, services) =>
+            .ConfigureServices(static (hostContext, services) =>
             {
+                var connectionString = hostContext.Configuration.GetConnectionString("Transactions");
+
+                var client = new MongoClient(connectionString);
+                IMongoDatabase database = client.GetDatabase("sentinel-transactions");
+
                 services
                 .AddLogging(builder => builder.AddConsole())
                 .AddScoped<ITransactionProcessor, TransactionProcessor>()
                 .AddScoped<ITransactionsStore, TransactionsStore>()
                 .AddScoped<ICustomerSettingsStore, CustomerSettingsStore>()
                 .AddScoped<ICountriesStore, CountriesStore>()
+                .AddSingleton<IMongoDatabase>(database)
                 .AddMassTransit(x =>
                 {
                     x.SetKebabCaseEndpointNameFormatter();
@@ -56,18 +67,5 @@ public class CountriesStore : ICountriesStore
     public Country GetCountry(string name)
     {
         return new Country(name, 0.15f);
-    }
-}
-
-public class TransactionsStore : ITransactionsStore
-{
-    public IReadOnlyList<LatestTransaction> GetLatestTransactionsForCustomer(Guid customerId, int howMany)
-    {
-        return new List<LatestTransaction>();
-    }
-
-    public void Store(CustomerTransaction transaction)
-    {
-        
     }
 }

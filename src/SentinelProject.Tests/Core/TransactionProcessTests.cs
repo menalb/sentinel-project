@@ -33,7 +33,7 @@ public class TransactionProcessTests
     [InlineData(0.1)]
     [InlineData(0.2)]
     [InlineData(0.3)]
-    public void When_It_Is_From_Hostile_Country_It_is_Rejected(float trustRate)
+    public async Task When_It_Is_From_Hostile_Country_It_is_Rejected(float trustRate)
     {
         // Arrange
         var hostileCountry = "HostileCountry";
@@ -51,7 +51,7 @@ public class TransactionProcessTests
         _countriesStore.GetCountry(transaction.Country).Returns(new Country(hostileCountry, trustRate));
 
         // Act
-        var result = _processor.Process(transaction);
+        var result = await _processor.Process(transaction);
 
         //Assert
         Assert.IsType<RejectedProcessTransactionResponse>(result);
@@ -62,7 +62,7 @@ public class TransactionProcessTests
     [InlineData(0.31)]
     [InlineData(0.4)]
     [InlineData(0.5)]
-    public void When_It_Is_From_Medium_Trust_Country_It_is_Accepted_With_Warning(float trustRate)
+    public async Task When_It_Is_From_Medium_Trust_Country_It_is_Accepted_With_Warning(float trustRate)
     {
         // Arrange
         var warningCountry = "WarningCountry";
@@ -80,7 +80,7 @@ public class TransactionProcessTests
         _countriesStore.GetCountry(transaction.Country).Returns(new Country(warningCountry, trustRate));
 
         // Act
-        var result = _processor.Process(transaction);
+        var result = await _processor.Process(transaction);
 
         //Assert
         Assert.IsType<WarningProcessTransactionResponse>(result);
@@ -92,7 +92,7 @@ public class TransactionProcessTests
     [InlineData(0.7)]
     [InlineData(0.9)]
     [InlineData(1)]
-    public void When_It_Is_From_Trusted_Country_It_is_Accepted(float trustRate)
+    public async Task When_It_Is_From_Trusted_Country_It_is_Accepted(float trustRate)
     {
         // Arrange
         var trustedCountry = "TrustedCountry";
@@ -110,14 +110,14 @@ public class TransactionProcessTests
         _countriesStore.GetCountry(transaction.Country).Returns(new Country(trustedCountry, trustRate));
 
         // Act
-        var result = _processor.Process(transaction);
+        var result = await _processor.Process(transaction);
 
         //Assert
         Assert.IsType<AcceptedProcessTransactionResponse>(result);
     }
 
     [Fact(DisplayName = "When the the customer is not in the store, it is rejected")]
-    public void When_Customer_DoesNot_Exist_It_Is_Rejected()
+    public async Task When_Customer_DoesNot_Exist_It_Is_Rejected()
     {
         // Arrange
         var customerId = Guid.NewGuid();
@@ -135,7 +135,7 @@ public class TransactionProcessTests
         _customerSettingsStore.GetById(customerId).ReturnsNull();
 
         // Act
-        var result = _processor.Process(transaction);
+        var result = await _processor.Process(transaction);
 
         //Assert
         Assert.IsType<RejectedProcessTransactionResponse>(result);
@@ -145,7 +145,7 @@ public class TransactionProcessTests
     [Theory(DisplayName = "When the amount is too large for the customer's max transaction amount settings, it is rejected")]
     [InlineData(20, 100)]
     [InlineData(15000, 100000)]
-    public void When_Amount_Is_Too_Big_For_Customer_It_is_Rejected(decimal customerMaxTransactionAmount, decimal amount)
+    public async Task When_Amount_Is_Too_Big_For_Customer_It_is_Rejected(decimal customerMaxTransactionAmount, decimal amount)
     {
         // Arrange
         var customerId = Guid.NewGuid();
@@ -163,7 +163,7 @@ public class TransactionProcessTests
         _customerSettingsStore.GetById(customerId).Returns(new Customer(customerId, "Joe Doe", customerMaxTransactionAmount));
 
         // Act
-        var result = _processor.Process(transaction);
+        var result = await _processor.Process(transaction);
 
         //Assert
         Assert.IsType<RejectedProcessTransactionResponse>(result);
@@ -171,7 +171,7 @@ public class TransactionProcessTests
     }
 
     [Fact(DisplayName = "When there are many (10) small (amount <= 5) subsequent transactions each within 1 minute of the other, It is accepted with warning")]
-    public void When_More_Subsequent_Small_Transactions_It_Is_Accepter_With_Warnings()
+    public async Task When_More_Subsequent_Small_Transactions_It_Is_Accepter_With_Warnings()
     {
         // Arrange
         var customerId = Guid.NewGuid();
@@ -201,7 +201,7 @@ public class TransactionProcessTests
         ]);
 
         // Act
-        var result = _processor.Process(transaction);
+        var result = await _processor.Process(transaction);
 
         //Assert
         Assert.IsType<WarningProcessTransactionResponse>(result);
@@ -209,7 +209,7 @@ public class TransactionProcessTests
     }
 
     [Fact(DisplayName = "When there are many (10) not small (at least one > 5) subsequent transactions each within 1 minute of the other, It is accepted")]
-    public void When_More_Subsequent_Not_SmallTransactions_It_Is_Accepter_With_Warnings()
+    public async Task When_More_Subsequent_Not_SmallTransactions_It_Is_Accepter_With_Warnings()
     {
         // Arrange
         var customerId = Guid.NewGuid();
@@ -239,14 +239,14 @@ public class TransactionProcessTests
         ]);
 
         // Act
-        var result = _processor.Process(transaction);
+        var result = await _processor.Process(transaction);
 
         //Assert
         Assert.IsType<AcceptedProcessTransactionResponse>(result);
     }
 
     [Fact(DisplayName = "Accepted transactions are stored")]
-    public void Accepted_Transactions_Are_Stored()
+    public async Task Accepted_Transactions_Are_Stored()
     {
         // Arrange
         var customerId = Guid.NewGuid();
@@ -261,11 +261,11 @@ public class TransactionProcessTests
             DateTime.UtcNow
             );
         // Act
-        var result = _processor.Process(transaction);
+        var result = await _processor.Process(transaction);
 
         //Assert
         Assert.IsType<AcceptedProcessTransactionResponse>(result);
-        _transactionsStore
+        await _transactionsStore
             .Received()
             .Store(
             new CustomerTransaction(
