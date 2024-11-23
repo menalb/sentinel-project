@@ -3,6 +3,7 @@ using FastEndpoints.Swagger;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication;
 using NSwag;
+using SentinelProject.API;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<ProcessedTransactionResultConsumer>();
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.ConfigureEndpoints(context);

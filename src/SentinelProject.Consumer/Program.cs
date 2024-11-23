@@ -5,8 +5,8 @@ using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using SentinelProject.Consumer.Core;
 using System;
-using System.Diagnostics;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 
 namespace SentinelProject.Consumer;
 
@@ -22,6 +22,7 @@ public class Program
             .ConfigureServices((hostContext, services) =>
             {
                 services
+                .AddLogging(builder => builder.AddConsole())
                 .AddScoped<ITransactionProcessor, TransactionProcessor>()
                 .AddScoped<ITransactionsStore, TransactionsStore>()
                 .AddScoped<ICustomerSettingsStore, CustomerSettingsStore>()
