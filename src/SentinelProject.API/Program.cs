@@ -2,18 +2,26 @@ using FastEndpoints;
 using FastEndpoints.Swagger;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication;
+using MongoDB.Bson.Serialization.Conventions;
+using MongoDB.Driver;
 using NSwag;
 using SentinelProject.API;
+using SentinelProject.API.Features.ProcessTransaction;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+var connectionString = builder.Configuration.GetConnectionString("Transactions") ?? throw new ArgumentNullException();
+
+var database = InitDatabase(connectionString);
+var transactionsCollection = database.GetCollection<StoredProcessTransactionRequest>("process-transactions-requests");
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services
+    .AddSingleton(transactionsCollection)
     .AddFastEndpoints()
     .AddAuthorization()
     .AddAuthentication(ApiKeyAuth.SchemeName)
@@ -63,3 +71,19 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run();
+
+
+static IMongoDatabase InitDatabase(string connectionString)
+{
+    var client = new MongoClient(connectionString);
+    var pack = new ConventionPack
+        {
+            new CamelCaseElementNameConvention()
+        };
+    ConventionRegistry.Register(
+        "Camel Case Convention",
+        pack,
+        t => true
+        );
+    return client.GetDatabase("sentinel-transactions-requests");
+}

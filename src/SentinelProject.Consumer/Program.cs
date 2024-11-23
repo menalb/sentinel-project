@@ -83,7 +83,18 @@ public class Program
                     Unique = true,
                     Name = "Country_Name"
                 });
-            countriesCollection.Indexes.CreateOne(countriesIndexModel);
+            countriesCollection.Indexes.CreateOne(countriesIndexModel);           
+
+            var customersCollection = database.GetCollection<StoredCustomer>("customers");
+
+            var customersIndexModel = new CreateIndexModel<StoredCustomer>(
+                Builders<StoredCustomer>.IndexKeys.Ascending(m => m.CustomerId),
+                new CreateIndexOptions
+                {
+                    Unique = true,
+                    Name = "Customer_Id"
+                });
+            customersCollection.Indexes.CreateOne(customersIndexModel);
 
             var countries = new List<StoredCountry>
             {
@@ -105,17 +116,6 @@ public class Program
             };
 
             countriesCollection.InsertManyAsync(countries);
-
-            var customersCollection = database.GetCollection<StoredCustomer>("customers");
-
-            var customersIndexModel = new CreateIndexModel<StoredCustomer>(
-                Builders<StoredCustomer>.IndexKeys.Ascending(m => m.CustomerId),
-                new CreateIndexOptions
-                {
-                    Unique = true,
-                    Name = "Customer_Id"
-                });
-            customersCollection.Indexes.CreateOne(customersIndexModel);
 
             var customers = new List<StoredCustomer>
             {
