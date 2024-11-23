@@ -19,18 +19,16 @@ public class TransactionProcessor(
 
         if (customerSettings == null)
         {
-            return new ProcessTransactionResponse(
+            return new RejectedProcessTransactionResponse(
                 transaction.TransactionId,
-                ProcessTransactionResults.Rejected,
                 "Customer not found"
                 );
         }
 
         if (transaction.Amount > customerSettings.MaxTransactionAmount)
         {
-            return new ProcessTransactionResponse(
+            return new RejectedProcessTransactionResponse(
                 transaction.TransactionId,
-                ProcessTransactionResults.Rejected,
                 "Transaction too big"
                 );
         }
@@ -38,18 +36,16 @@ public class TransactionProcessor(
         var country = countryStore.GetCountry(transaction.Country);
         if (country.TrustRate <= 0.3f)
         {
-            return new ProcessTransactionResponse(
+            return new RejectedProcessTransactionResponse(
                 transaction.TransactionId,
-                ProcessTransactionResults.Rejected,
                 "Hostile country"
                 );
         }
 
         if (country.TrustRate > 0.3f && country.TrustRate <= 0.5)
         {
-            return new ProcessTransactionResponse(
+            return new WarningProcessTransactionResponse(
                 transaction.TransactionId,
-                ProcessTransactionResults.Warning,
                 "Medium trust country"
                 );
         }
@@ -63,9 +59,8 @@ public class TransactionProcessor(
                 var time = transaction.IssuesAt.Subtract(latestTransactions[latestTransactions.Count - 1].IssuedAt);
                 if (time.Minutes < 10 && latestTransactions.All(t => t.Amount <= 5))
                 {
-                    return new ProcessTransactionResponse(
+                    return new WarningProcessTransactionResponse(
                       transaction.TransactionId,
-                      ProcessTransactionResults.Warning,
                       "Many small subsequent transactions"
                       );
                 }
@@ -82,6 +77,6 @@ public class TransactionProcessor(
                 transaction.TransactionType,
                 transaction.IssuesAt
             ));
-        return new ProcessTransactionResponse(transaction.TransactionId, ProcessTransactionResults.Accepted);
+        return new AcceptedProcessTransactionResponse(transaction.TransactionId);
     }
 }

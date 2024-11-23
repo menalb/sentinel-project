@@ -54,8 +54,8 @@ public class TransactionProcessTests
         var result = _processor.Process(transaction);
 
         //Assert
-        Assert.Equal(ProcessTransactionResults.Rejected, result.Result);
-        Assert.Equal("Hostile country", result.Message);
+        Assert.IsType<RejectedProcessTransactionResponse>(result);
+        Assert.Equal("Hostile country", (result as RejectedProcessTransactionResponse)!.Reason);
     }
 
     [Theory(DisplayName = "When it is from a medium trust country (trust rate between 0.3 and 0.5) It is accepted with warning")]
@@ -83,8 +83,8 @@ public class TransactionProcessTests
         var result = _processor.Process(transaction);
 
         //Assert
-        Assert.Equal(ProcessTransactionResults.Warning, result.Result);
-        Assert.Equal("Medium trust country", result.Message);
+        Assert.IsType<WarningProcessTransactionResponse>(result);
+        Assert.Equal("Medium trust country", (result as WarningProcessTransactionResponse)!.Reason);
     }
 
     [Theory(DisplayName = "When it is from a trusted country (trust rate greater than 0.5) It is accepted")]
@@ -113,7 +113,7 @@ public class TransactionProcessTests
         var result = _processor.Process(transaction);
 
         //Assert
-        Assert.Equal(ProcessTransactionResults.Accepted, result.Result);
+        Assert.IsType<AcceptedProcessTransactionResponse>(result);
     }
 
     [Fact(DisplayName = "When the the customer is not in the store, it is rejected")]
@@ -138,8 +138,8 @@ public class TransactionProcessTests
         var result = _processor.Process(transaction);
 
         //Assert
-        Assert.Equal(ProcessTransactionResults.Rejected, result.Result);
-        Assert.Equal("Customer not found", result.Message);
+        Assert.IsType<RejectedProcessTransactionResponse>(result);
+        Assert.Equal("Customer not found", (result as RejectedProcessTransactionResponse)!.Reason);
     }
 
     [Theory(DisplayName = "When the amount is too large for the customer's max transaction amount settings, it is rejected")]
@@ -166,8 +166,8 @@ public class TransactionProcessTests
         var result = _processor.Process(transaction);
 
         //Assert
-        Assert.Equal(ProcessTransactionResults.Rejected, result.Result);
-        Assert.Equal("Transaction too big", result.Message);
+        Assert.IsType<RejectedProcessTransactionResponse>(result);
+        Assert.Equal("Transaction too big", (result as RejectedProcessTransactionResponse)!.Reason);
     }
 
     [Fact(DisplayName = "When there are many (10) small (amount <= 5) subsequent transactions each within 1 minute of the other, It is accepted with warning")]
@@ -204,8 +204,8 @@ public class TransactionProcessTests
         var result = _processor.Process(transaction);
 
         //Assert
-        Assert.Equal(ProcessTransactionResults.Warning, result.Result);
-        Assert.Equal("Many small subsequent transactions", result.Message);
+        Assert.IsType<WarningProcessTransactionResponse>(result);
+        Assert.Equal("Many small subsequent transactions", (result as WarningProcessTransactionResponse)!.Reason);
     }
 
     [Fact(DisplayName = "When there are many (10) not small (at least one > 5) subsequent transactions each within 1 minute of the other, It is accepted")]
@@ -242,7 +242,7 @@ public class TransactionProcessTests
         var result = _processor.Process(transaction);
 
         //Assert
-        Assert.Equal(ProcessTransactionResults.Accepted, result.Result);
+        Assert.IsType<AcceptedProcessTransactionResponse>(result);
     }
 
     [Fact(DisplayName = "Accepted transactions are stored")]
@@ -264,7 +264,7 @@ public class TransactionProcessTests
         var result = _processor.Process(transaction);
 
         //Assert
-        Assert.Equal(ProcessTransactionResults.Accepted, result.Result);
+        Assert.IsType<AcceptedProcessTransactionResponse>(result);
         _transactionsStore
             .Received()
             .Store(

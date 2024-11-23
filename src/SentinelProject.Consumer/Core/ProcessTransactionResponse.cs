@@ -2,4 +2,7 @@
 
 namespace SentinelProject.Consumer.Core;
 
-public record ProcessTransactionResponse(Guid TransactionId, ProcessTransactionResults Result, string? Message = "");
+public abstract record ProcessTransactionResponse(Guid TransactionId);
+public record AcceptedProcessTransactionResponse(Guid TransactionId) : ProcessTransactionResponse(TransactionId);
+public record WarningProcessTransactionResponse(Guid TransactionId, string Reason) : ProcessTransactionResponse(TransactionId);
+public record RejectedProcessTransactionResponse(Guid TransactionId, string Reason) : ProcessTransactionResponse(TransactionId);
