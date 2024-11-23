@@ -1,6 +1,8 @@
-﻿namespace SentinelProject.Consumer.Core;
+﻿using System.Threading.Tasks;
+
+namespace SentinelProject.Consumer.Core;
 
 public interface ICountriesStore
 {
-    Country GetCountry(string name);
+    Task<Country> GetCountry(string name);
 }

@@ -16,7 +16,7 @@ public class TransactionProcessor(
 {
     public async Task<ProcessTransactionResponse> Process(CreatedTransactionProcessRequest transaction)
     {
-        var customerSettings = customerSettingsStore.GetById(transaction.UserId);
+        var customerSettings = await customerSettingsStore.GetById(transaction.UserId);
 
         if (customerSettings == null)
         {
@@ -34,7 +34,7 @@ public class TransactionProcessor(
                 );
         }
 
-        var country = countryStore.GetCountry(transaction.Country);
+        var country = await countryStore.GetCountry(transaction.Country);
         if (country.TrustRate <= 0.3f)
         {
             return new RejectedProcessTransactionResponse(

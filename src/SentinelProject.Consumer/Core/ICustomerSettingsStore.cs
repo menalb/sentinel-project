@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace SentinelProject.Consumer.Core;
 
 public interface ICustomerSettingsStore
 {
-    Customer? GetById(Guid Id);  // TODO: Use Option instead of null
+    Task<Customer>? GetById(Guid Id);  // TODO: Use Option instead of null
 }
