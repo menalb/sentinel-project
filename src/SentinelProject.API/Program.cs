@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 using NSwag;
-using SentinelProject.API;
+using SentinelProject.API.Consumers;
 using SentinelProject.API.Features.ProcessTransaction;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,7 +45,9 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<ProcessedTransactionResultConsumer>();
+    x.AddConsumer<AcceptedTransactionResultConsumer>();
+    x.AddConsumer<WarningTransactionResultConsumer>();
+    x.AddConsumer<RejectedTransactionResultConsumer>();
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.ConfigureEndpoints(context);

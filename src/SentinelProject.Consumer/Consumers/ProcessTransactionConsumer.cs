@@ -15,14 +15,21 @@ public class ProcessTransactionConsumer(ITransactionProcessor transactionProcess
 
         var processResult = await transactionProcessor.Process(message);
 
-        var response = processResult switch
-        {
-            AcceptedProcessTransactionResponse => new ProcessedTransactionResult(message.TransactionId, "accepted", ""),
-            RejectedProcessTransactionResponse r => new ProcessedTransactionResult(message.TransactionId, "rejected", r.Reason),
-            WarningProcessTransactionResponse r => new ProcessedTransactionResult(message.TransactionId, "warning", r.Reason),
-            _ => throw new ArgumentOutOfRangeException(),
-        };
+        //PublishedTransactionResult response = processResult switch
+        //{
+        //    AcceptedProcessTransactionResponse => new AcceptedTransactionResult(message.TransactionId),
+        //    WarningProcessTransactionResponse r => new WarningTransactionResult(message.TransactionId, r.Reason),
+        //    RejectedProcessTransactionResponse r => new RejectedTransactionResult(message.TransactionId, r.Reason),
+        //    _ => throw new ArgumentOutOfRangeException(),
+        //};
 
-        await context.Publish(response);
+        await context.Publish(processResult switch
+        {
+            AcceptedProcessTransactionResponse => new AcceptedTransactionResult(message.TransactionId),
+            WarningProcessTransactionResponse r => new WarningTransactionResult(message.TransactionId, r.Reason),
+            RejectedProcessTransactionResponse r => new RejectedTransactionResult(message.TransactionId, r.Reason),
+            _ => throw new ArgumentOutOfRangeException(),
+        });
+        // await context.Publish(new Messages.RejectedTransactionResult(message.TransactionId, "boh"));
     }
 }
