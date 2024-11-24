@@ -112,3 +112,32 @@ The HTTP GET that returns the status of the transaction process could also be ca
 
 ### API
 If there is no control over who is the final user of the API, it is necessary to add throttling control, so that the load does not risk bringing the service down.
+
+## Run local
+To run the solution in the local machine it is necessary to have RabbitMQ and MongoDB running.
+
+These can be used by using docker-compose. In the root folder there is a docker-compose file.
+This has also the port mapping for the default configuration.
+
+It would be possible to access to:
+
+- MongoDB using `mongodb://localhost:27017/?directConnection=true` as connection string
+- RabbitMQ UI browsing `http://localhost:15672/#/` and login usin username: guest password: guest
+
+When the consumer starts, it creates some database indexes and also adds some default test data.
+
+### Countries
+
+|name|trustRate|
+|----|---------|
+|Trusted Country|1|
+|Medium Trust Country|0.4|
+|Hostile Country|0.1|
+
+### Customers
+
+|customerId|name|maxTransactionAmount|
+|----------|----|--------------------|
+|f2887467-a266-4554-9b8c-51d8e52c7771|Paolo Rossi|100|
+|819af267-9ac2-4121-85d1-5bf6eab0cb25|Mario Verdi|520|
+|d4620576-783d-4a64-bf68-1f386ccfeb14|Franco Romano|50|
