@@ -1,6 +1,7 @@
 ﻿using SentinelProject.Messages;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace SentinelProject.Consumer.Core;
 
@@ -8,11 +9,33 @@ public interface ITransactionProcessor
 {
     Task<ProcessTransactionResponse> Process(CreatedTransactionProcessRequest transaction);
 }
-public class TransactionProcessor(
-    ICustomerSettingsStore customerSettingsStore,
-    ICountriesStore countryStore,
-    ITransactionsStore transactionsStore
-    ) : ITransactionProcessor
+
+public class TransactionCountryProcessor(ICountriesStore countryStore)
+{
+    public async Task<ProcessTransactionResponse> Process(CreatedTransactionProcessRequest transaction)
+    {
+        var country = await countryStore.GetCountry(transaction.Country);
+        if (country.TrustRate <= 0.3f)
+        {
+            return new RejectedProcessTransactionResponse(
+                transaction.TransactionId,
+                "Hostile country"
+                );
+        }
+
+        if (country.TrustRate > 0.3f && country.TrustRate <= 0.5)
+        {
+            return new WarningProcessTransactionResponse(
+                transaction.TransactionId,
+                "Medium trust country"
+                );
+        }
+
+        return new AcceptedProcessTransactionResponse(transaction.TransactionId);
+    }
+}
+
+public class TransactionCustomerSettingsProcessor(ICustomerSettingsStore customerSettingsStore)
 {
     public async Task<ProcessTransactionResponse> Process(CreatedTransactionProcessRequest transaction)
     {
@@ -33,24 +56,13 @@ public class TransactionProcessor(
                 "Transaction too big"
                 );
         }
-
-        var country = await countryStore.GetCountry(transaction.Country);
-        if (country.TrustRate <= 0.3f)
-        {
-            return new RejectedProcessTransactionResponse(
-                transaction.TransactionId,
-                "Hostile country"
-                );
-        }
-
-        if (country.TrustRate > 0.3f && country.TrustRate <= 0.5)
-        {
-            return new WarningProcessTransactionResponse(
-                transaction.TransactionId,
-                "Medium trust country"
-                );
-        }
-
+        return new AcceptedProcessTransactionResponse(transaction.TransactionId);
+    }
+}
+public class TransactionPatternProcessor(ITransactionsStore transactionsStore)
+{
+    public async Task<ProcessTransactionResponse> Process(CreatedTransactionProcessRequest transaction)
+    {
         if (transaction.Amount < 5)
         {
             var latestTransactions = await transactionsStore.GetLatestTransactionsForCustomer(transaction.UserId, 9);
@@ -66,6 +78,36 @@ public class TransactionProcessor(
                       );
                 }
             }
+        }
+        return new AcceptedProcessTransactionResponse(transaction.TransactionId);
+    }
+}
+
+public class TransactionProcessor(
+    TransactionCustomerSettingsProcessor transactionCustomerSettingsProcessor,
+    TransactionCountryProcessor countryProcessor,
+    TransactionPatternProcessor transactionPatternProcessor,
+    ITransactionsStore transactionsStore
+    ) : ITransactionProcessor
+{
+    public async Task<ProcessTransactionResponse> Process(CreatedTransactionProcessRequest transaction)
+    {
+        var customerSettingsResult = await transactionCustomerSettingsProcessor.Process(transaction);
+        if (customerSettingsResult is not AcceptedProcessTransactionResponse)
+        {
+            return customerSettingsResult;
+        }
+
+        var countryResult = await countryProcessor.Process(transaction);
+        if (countryResult is not AcceptedProcessTransactionResponse)
+        {
+            return countryResult;
+        }
+
+        var transactionsPatternResult = await transactionPatternProcessor.Process(transaction);
+        if (transactionsPatternResult is not AcceptedProcessTransactionResponse)
+        {
+            return transactionsPatternResult;
         }
 
         await transactionsStore.Store(new(

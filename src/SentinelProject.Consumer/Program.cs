@@ -35,6 +35,9 @@ public class Program
                 .AddScoped<ITransactionsStore, TransactionsStore>()
                 .AddScoped<ICustomerSettingsStore, CustomerSettingsStore>()
                 .AddScoped<ICountriesStore, CountriesStore>()
+                .AddScoped<TransactionCustomerSettingsProcessor>()
+                .AddScoped<TransactionCountryProcessor>()
+                .AddScoped<TransactionPatternProcessor>()
                 .AddSingleton<IMongoDatabase>(database)
                 .AddMassTransit(x =>
                 {
