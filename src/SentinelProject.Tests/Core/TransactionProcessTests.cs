@@ -1,6 +1,7 @@
 ﻿using NSubstitute;
 using NSubstitute.ReturnsExtensions;
 using SentinelProject.Consumer.Core;
+using SentinelProject.Consumer.Core.TransactionRules;
 using SentinelProject.Messages;
 
 namespace SentinelProject.Tests.Core;
@@ -19,8 +20,11 @@ public class TransactionProcessTests
         _transactionsStore = Substitute.For<ITransactionsStore>();
 
         _processor = new TransactionProcessor(
-            _customerSettingsStore,
-            _countriesStore,
+            [
+            new TransactionCustomerSettingsProcessor(_customerSettingsStore),
+            new TransactionCountryProcessor(_countriesStore),
+            new TransactionPatternProcessor(_transactionsStore)
+            ],
             _transactionsStore
             );
 

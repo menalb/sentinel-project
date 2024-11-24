@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using SentinelProject.Consumer.Infrastructure;
 using MongoDB.Bson.Serialization.Conventions;
+using SentinelProject.Consumer.Core.TransactionRules;
 
 namespace SentinelProject.Consumer;
 
@@ -34,10 +35,12 @@ public class Program
                 .AddScoped<ITransactionProcessor, TransactionProcessor>()
                 .AddScoped<ITransactionsStore, TransactionsStore>()
                 .AddScoped<ICustomerSettingsStore, CustomerSettingsStore>()
-                .AddScoped<ICountriesStore, CountriesStore>()
-                .AddScoped<TransactionCustomerSettingsProcessor>()
-                .AddScoped<TransactionCountryProcessor>()
-                .AddScoped<TransactionPatternProcessor>()
+                .AddScoped<ICountriesStore, CountriesStore>()                
+                .AddScoped<IList<ITransactionProcessingRule>>(ctx => [
+                    new TransactionCustomerSettingsProcessor(ctx.GetRequiredService<ICustomerSettingsStore>()),
+                    new TransactionCountryProcessor(ctx.GetRequiredService<ICountriesStore>()),
+                    new TransactionPatternProcessor(ctx.GetRequiredService<ITransactionsStore>()),
+                ])
                 .AddSingleton<IMongoDatabase>(database)
                 .AddMassTransit(x =>
                 {
