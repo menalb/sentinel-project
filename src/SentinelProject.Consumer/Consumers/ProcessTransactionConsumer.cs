@@ -10,10 +10,9 @@ public class ProcessTransactionConsumer(ITransactionProcessor transactionProcess
 {
     public async Task Consume(ConsumeContext<CreatedTransactionProcessRequest> context)
     {
-        var message = context.Message;
-        logger.LogInformation("Request with transaction Id {TransactionId} consumed, I got it", context.Message.TransactionId);
+        var message = context.Message;        
 
-        var processResult = await transactionProcessor.Process(message);  
+        var processResult = await transactionProcessor.Process(message);
 
         await context.Publish(processResult switch
         {
@@ -22,5 +21,7 @@ public class ProcessTransactionConsumer(ITransactionProcessor transactionProcess
             RejectedProcessTransactionResponse r => new RejectedTransactionResult(message.TransactionId, r.Reason),
             _ => throw new ArgumentOutOfRangeException(),
         });
+
+        logger.LogInformation("Request with transaction Id {TransactionId} consumed", context.Message.TransactionId);
     }
 }

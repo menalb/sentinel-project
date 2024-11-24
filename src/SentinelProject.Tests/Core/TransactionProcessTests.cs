@@ -120,7 +120,7 @@ public class TransactionProcessTests
         Assert.IsType<AcceptedProcessTransactionResponse>(result);
     }
 
-    [Fact(DisplayName = "When the the customer is not in the store, it is rejected")]
+    [Fact(DisplayName = "When the customer is not in the store, it is rejected")]
     public async Task When_Customer_DoesNot_Exist_It_Is_Rejected()
     {
         // Arrange
@@ -213,7 +213,7 @@ public class TransactionProcessTests
     }
 
     [Fact(DisplayName = "When there are many (10) not small (at least one > 5) subsequent transactions each within 1 minute of the other, It is accepted")]
-    public async Task When_More_Subsequent_Not_SmallTransactions_It_Is_Accepter_With_Warnings()
+    public async Task When_More_Subsequent_Not_SmallTransactions_It_Is_Accepted()
     {
         // Arrange
         var customerId = Guid.NewGuid();
