@@ -113,6 +113,12 @@ The HTTP GET that returns the status of the transaction process could also be ca
 ### API
 If there is no control over who is the final user of the API, it is necessary to add throttling control, so that the load does not risk bringing the service down.
 
+### Observability
+Add OpenTelemetry.
+
+### Security
+Encrypt messages.
+
 ## Run local
 To run the solution in the local machine it is necessary to have RabbitMQ and MongoDB running.
 
