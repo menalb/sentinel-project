@@ -1,9 +1,9 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 
 var apiUri = "https://localhost:7140/transactions";
 
 var client = new HttpClient();
-client.DefaultRequestHeaders.Add("x-api-key", "dG43cQyut?JH3-w");
+client.DefaultRequestHeaders.Add("x-api-key", "api key");
 Random rnd = new Random();
 
 int i = 0;
