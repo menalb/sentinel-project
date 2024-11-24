@@ -13,15 +13,7 @@ public class ProcessTransactionConsumer(ITransactionProcessor transactionProcess
         var message = context.Message;
         logger.LogInformation("Request with transaction Id {TransactionId} consumed, I got it", context.Message.TransactionId);
 
-        var processResult = await transactionProcessor.Process(message);
-
-        //PublishedTransactionResult response = processResult switch
-        //{
-        //    AcceptedProcessTransactionResponse => new AcceptedTransactionResult(message.TransactionId),
-        //    WarningProcessTransactionResponse r => new WarningTransactionResult(message.TransactionId, r.Reason),
-        //    RejectedProcessTransactionResponse r => new RejectedTransactionResult(message.TransactionId, r.Reason),
-        //    _ => throw new ArgumentOutOfRangeException(),
-        //};
+        var processResult = await transactionProcessor.Process(message);  
 
         await context.Publish(processResult switch
         {
@@ -30,6 +22,5 @@ public class ProcessTransactionConsumer(ITransactionProcessor transactionProcess
             RejectedProcessTransactionResponse r => new RejectedTransactionResult(message.TransactionId, r.Reason),
             _ => throw new ArgumentOutOfRangeException(),
         });
-        // await context.Publish(new Messages.RejectedTransactionResult(message.TransactionId, "boh"));
     }
 }
