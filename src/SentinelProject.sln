@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SentinelProject.Consumer", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelProject.Messages", "SentinelProject.Messages\SentinelProject.Messages.csproj", "{03B98A29-2E37-4B25-883F-7DA4B3C0E40E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelProject.ClientConsole", "SentinelProject.ClientConsole\SentinelProject.ClientConsole.csproj", "{3FC2C2AC-8D8A-4E96-AD4C-9BB3B71E4FAC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{03B98A29-2E37-4B25-883F-7DA4B3C0E40E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{03B98A29-2E37-4B25-883F-7DA4B3C0E40E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{03B98A29-2E37-4B25-883F-7DA4B3C0E40E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3FC2C2AC-8D8A-4E96-AD4C-9BB3B71E4FAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FC2C2AC-8D8A-4E96-AD4C-9BB3B71E4FAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FC2C2AC-8D8A-4E96-AD4C-9BB3B71E4FAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FC2C2AC-8D8A-4E96-AD4C-9BB3B71E4FAC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

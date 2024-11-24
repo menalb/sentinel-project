@@ -1,4 +1,5 @@
 ﻿using NSubstitute;
+using NSubstitute.ReturnsExtensions;
 using SentinelProject.Consumer.Core;
 using SentinelProject.Messages;
 
@@ -92,5 +93,30 @@ public class TransactionProcessTestsCountry : TransactionProcessTests
 
         //Assert
         Assert.IsType<AcceptedProcessTransactionResponse>(result);
+    }
+
+    [Fact(DisplayName = "When the country does not exist It is Rejected")]
+    public async Task When_The_Country_DoesNot_Exist_It_is_Rejected()
+    {
+        // Arrange
+        var trustedCountry = "FakeCountry";
+        var transaction = new CreatedTransactionProcessRequest(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            50,
+            trustedCountry,
+            "Zalando",
+            "Mobile",
+            "purchase",
+            DateTime.UtcNow
+            );
+
+        _countriesStore.GetCountry(transaction.Country).ReturnsNull();
+
+        // Act
+        var result = await _processor.Process(transaction);
+
+        //Assert
+        Assert.IsType<RejectedProcessTransactionResponse>(result);
     }
 }

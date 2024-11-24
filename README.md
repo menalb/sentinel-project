@@ -11,7 +11,7 @@ It is split in two main pieces:
 
 ![Architecture diagram](architecture.drawio.png)
 
-### POST transaction to ASPNET API
+### POST transaction to ASPNET API (SentinelProject.API project)
 The entry point is the ASPNET Core API (on the left). This si built using Minimal API and [FastEndpoints](https://fast-endpoints.com/).
 
 `HTTP POST /transactions` 
@@ -37,7 +37,8 @@ The API endpoint:
 > This endpoint performs a very basic validation of the incoming message by checking that the transaction amount is greather than zero.
 
 
-### Message Consumer
+### Message Consumer  (SentinelProject.Consumer project)
+
 This uses MassTransit to attach a queue to the `CreatedTransactionProcessRequest` exchange and pools the messages that are published.
 
 For each message, it applies some business rules to understand if the transacion is:
@@ -85,6 +86,13 @@ It is possible to implement and test each new rule in isolation.
 Any additional consideration on the order of exection of the rules can be done when registering the rule set cia dependency injection. Some rules could also run in parallel.
 
 In case of very intense workloads, it is possible to extract every single rule or combination of them, in separate microservices and have some kind of orchestrator that deals with the status of the workflow.
+
+### Machine Learning
+This implementation does not rely on any ML model. However, there are at least various alternatives:
+- using a cloud provider managed service. Both AWS and Azure have a set of services that implement fraud detection
+- hosting the model and dealing with making it available to the rule engine
+
+Also, not strictly related to ML is Vector Search. This could be tested to understand if a transaction fits the customer's habits.
 
 ## Authentication
 The access to the API's endpoint is allowed only to request that provides the expected API key in the `x-api-key` header.
@@ -147,3 +155,9 @@ When the consumer starts, it creates some database indexes and also adds some de
 |f2887467-a266-4554-9b8c-51d8e52c7771|Paolo Rossi|100|
 |819af267-9ac2-4121-85d1-5bf6eab0cb25|Mario Verdi|520|
 |d4620576-783d-4a64-bf68-1f386ccfeb14|Franco Romano|50|
+
+Run:
+- `SentinelProject.API project`
+- `SentinelProject.Consumer project`
+
+The `SentinelProject.ClientConsole` can be used to simulate invocations to the API.
