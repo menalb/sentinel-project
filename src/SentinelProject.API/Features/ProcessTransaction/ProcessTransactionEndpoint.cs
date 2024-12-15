@@ -7,8 +7,8 @@ using SentinelProject.Messages;
 
 namespace SentinelProject.API.Features.ProcessTransaction;
 public record ProcessTransactionRequest(
-    [property: BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Standard)] Guid TransactionId,
-    [property: BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Standard)] Guid UserId,
+    [property: BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Unspecified)] Guid TransactionId,
+    [property: BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Unspecified)] Guid UserId,
     decimal Amount,
     string Location,
     string Merchant,

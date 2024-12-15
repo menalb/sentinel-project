@@ -10,18 +10,20 @@ using SentinelProject.API.Features.ProcessTransaction;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("Transactions") ?? throw new ArgumentNullException();
-
-var database = InitDatabase(connectionString);
-var transactionsCollection = database.GetCollection<StoredProcessTransactionRequest>("process-transactions-requests");
+builder.AddServiceDefaults();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
+builder.AddMongoDBClient("sentinel-transactions");
+
 builder.Services
-    .AddSingleton(transactionsCollection)
+     .AddSingleton(ctx => {
+         var client = ctx.GetRequiredService<IMongoClient>();
+         var database = client.GetDatabase("sentinel-transactions-requests");
+         return database.GetCollection<StoredProcessTransactionRequest>("process-transactions-requests");
+         })
     .AddFastEndpoints()
     .AddAuthorization()
     .AddAuthentication(ApiKeyAuth.SchemeName)
@@ -50,11 +52,26 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<RejectedTransactionResultConsumer>();
     x.UsingRabbitMq((context, cfg) =>
     {
+        var configuration = context.GetRequiredService<IConfiguration>();
+        var host = configuration.GetConnectionString("messaging");
+        cfg.Host(host);
         cfg.ConfigureEndpoints(context);
     });
 });
 
 var app = builder.Build();
+
+var pack = new ConventionPack
+        {
+            new CamelCaseElementNameConvention()
+        };
+ConventionRegistry.Register(
+    "Camel Case Convention",
+    pack,
+    t => true
+    );
+
+app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.
 app.UseAuthentication()
@@ -73,19 +90,3 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run();
-
-
-static IMongoDatabase InitDatabase(string connectionString)
-{
-    var client = new MongoClient(connectionString);
-    var pack = new ConventionPack
-        {
-            new CamelCaseElementNameConvention()
-        };
-    ConventionRegistry.Register(
-        "Camel Case Convention",
-        pack,
-        t => true
-        );
-    return client.GetDatabase("sentinel-transactions-requests");
-}

@@ -8,9 +8,9 @@ public class StoredCustomerTransaction
 {
     [BsonId]
     public ObjectId Id { get; set; }
-    [BsonGuidRepresentation(GuidRepresentation.Standard)]
+    [BsonGuidRepresentation(GuidRepresentation.Unspecified)]
     public Guid TransactionId { get; set; }
-    [BsonGuidRepresentation(GuidRepresentation.Standard)]
+    [BsonGuidRepresentation(GuidRepresentation.Unspecified)]
     public Guid CustomerId { get; set; }
     public decimal Amount { get; set; }
     public required string Country { get; set; }

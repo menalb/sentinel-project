@@ -14,8 +14,8 @@ public class AcceptedTransactionResultConsumer(
     {
         var message = context.Message;
         logger.LogInformation("Processing Accepted Response with transaction Id {TransactionId}", context.Message.TransactionId);
-
-        await transactionsCollection.UpdateOneAsync(
+        
+        var result = await transactionsCollection.UpdateOneAsync(
             Builders<StoredProcessTransactionRequest>.Filter.Eq(t => t.ProcessRequest.TransactionId, message.TransactionId),
             Builders<StoredProcessTransactionRequest>.Update
             .Set(t => t.Status, "processed")

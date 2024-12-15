@@ -13,6 +13,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelProject.Messages", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelProject.ClientConsole", "SentinelProject.ClientConsole\SentinelProject.ClientConsole.csproj", "{3FC2C2AC-8D8A-4E96-AD4C-9BB3B71E4FAC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelProject.AppHost", "SentinelProject.AppHost\SentinelProject.AppHost.csproj", "{45F36F74-165A-4984-A873-EF735BA7182D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelProject.ServiceDefaults", "SentinelProject.ServiceDefaults\SentinelProject.ServiceDefaults.csproj", "{A6D60A5E-50A5-4409-A3D5-9F59AF7C9761}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AF5A6552-D1F6-4A31-83A0-140E4967D7FA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +45,14 @@ Global
 		{3FC2C2AC-8D8A-4E96-AD4C-9BB3B71E4FAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3FC2C2AC-8D8A-4E96-AD4C-9BB3B71E4FAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3FC2C2AC-8D8A-4E96-AD4C-9BB3B71E4FAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45F36F74-165A-4984-A873-EF735BA7182D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45F36F74-165A-4984-A873-EF735BA7182D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45F36F74-165A-4984-A873-EF735BA7182D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45F36F74-165A-4984-A873-EF735BA7182D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6D60A5E-50A5-4409-A3D5-9F59AF7C9761}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6D60A5E-50A5-4409-A3D5-9F59AF7C9761}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6D60A5E-50A5-4409-A3D5-9F59AF7C9761}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6D60A5E-50A5-4409-A3D5-9F59AF7C9761}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

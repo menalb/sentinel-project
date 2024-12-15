@@ -19,29 +19,44 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        await CreateHostBuilder(args).Build().RunAsync();
+        var host = CreateHostBuilder(args).Build();
+        var database = InitDatabase(host.Services.GetRequiredService<IMongoDatabase>());
+        await host.RunAsync();
     }
 
     public static IHostBuilder CreateHostBuilder(string[] args) =>
         Host.CreateDefaultBuilder(args)
             .ConfigureServices(static (hostContext, services) =>
             {
-                var connectionString = hostContext.Configuration.GetConnectionString("Transactions");
-
-                var database = InitDatabase(connectionString);
+                var connectionString = hostContext.Configuration.GetConnectionString("sentinel-transactions");                
+                
+                var pack = new ConventionPack
+                {
+                    new CamelCaseElementNameConvention()
+                };
+                ConventionRegistry.Register(
+                    "Camel Case Convention",
+                    pack,
+                    t => true
+                    );
 
                 services
                 .AddLogging(builder => builder.AddConsole())
                 .AddScoped<ITransactionProcessor, TransactionProcessor>()
                 .AddScoped<ITransactionsStore, TransactionsStore>()
                 .AddScoped<ICustomerSettingsStore, CustomerSettingsStore>()
-                .AddScoped<ICountriesStore, CountriesStore>()                
+                .AddScoped<ICountriesStore, CountriesStore>()
                 .AddScoped<IList<ITransactionProcessingRule>>(ctx => [
                     new TransactionCustomerSettingsProcessor(ctx.GetRequiredService<ICustomerSettingsStore>()),
                     new TransactionCountryProcessor(ctx.GetRequiredService<ICountriesStore>()),
                     new TransactionPatternProcessor(ctx.GetRequiredService<ITransactionsStore>()),
                 ])
-                .AddSingleton<IMongoDatabase>(database)
+                .AddSingleton<IMongoClient>(new MongoClient(connectionString))
+                .AddSingleton<IMongoDatabase>(ctx =>
+                {
+                    var client = ctx.GetRequiredService<IMongoClient>();
+                    return client.GetDatabase("sentinel-transactions");
+                })
                 .AddMassTransit(x =>
                 {
                     x.SetKebabCaseEndpointNameFormatter();
@@ -52,25 +67,16 @@ public class Program
 
                     x.UsingRabbitMq((context, cfg) =>
                     {
+                        var configuration = context.GetRequiredService<IConfiguration>();
+                        var host = configuration.GetConnectionString("messaging");
+                        cfg.Host(host);
                         cfg.ConfigureEndpoints(context);
                     });
                 });
             });
 
-    private static IMongoDatabase InitDatabase(string connectionString)
+    private static IMongoDatabase InitDatabase(IMongoDatabase database)
     {
-        var client = new MongoClient(connectionString);
-        var pack = new ConventionPack
-        {
-            new CamelCaseElementNameConvention()
-        };
-        ConventionRegistry.Register(
-            "Camel Case Convention",
-            pack,
-            t => true
-            );
-        IMongoDatabase database = client.GetDatabase("sentinel-transactions");
-
         InitCollections(database);
 
         return database;
@@ -89,7 +95,7 @@ public class Program
                     Unique = true,
                     Name = "Country_Name"
                 });
-            countriesCollection.Indexes.CreateOne(countriesIndexModel);           
+            countriesCollection.Indexes.CreateOne(countriesIndexModel);
 
             var customersCollection = database.GetCollection<StoredCustomer>("customers");
 

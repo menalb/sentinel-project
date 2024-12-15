@@ -9,7 +9,7 @@ public class StoredCustomer
 
     [BsonId]
     public ObjectId Id { get; set; }
-    [BsonGuidRepresentation(GuidRepresentation.Standard)]
+    [BsonGuidRepresentation(GuidRepresentation.Unspecified)]
     public Guid CustomerId { get; set; }
     public required string Name { get; set; }
     public decimal MaxTransactionAmount { get; set; }
