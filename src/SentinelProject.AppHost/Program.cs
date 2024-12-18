@@ -4,8 +4,6 @@ var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress()
     .WithDataBindMount("/var/data/mongo")
     .AddDatabase("sentinel-transactions"); // adds default database, the parameter is the name to use to identify the resource
-// mongo.AddDatabase("sentinel-transactions");
-// mongo.AddDatabase("sentinel-transactions-requests");
 
 var messaging = builder.AddRabbitMQ("messaging")
     .WithManagementPlugin();
